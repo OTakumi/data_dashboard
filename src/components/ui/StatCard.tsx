@@ -1,13 +1,15 @@
 import React from 'react';
 import { ArrowUpIcon, ArrowDownIcon, MinusIcon } from '@heroicons/react/24/solid';
+import './StatCard.css';
 
 interface StatCardProps {
   title: string;
   value: number;
   previousValue?: number;
   format?: 'currency' | 'number' | 'percentage';
-  trend?: 'up' | 'down' | 'neutral';
+  trend?: 'up' | 'down' | 'neutral' | 'warning';
   isLoading?: boolean;
+  className?: string;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -17,6 +19,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   format = 'number',
   trend,
   isLoading = false,
+  className = '',
 }) => {
   // 値のフォーマット
   const formatValue = (val: number): string => {
@@ -31,17 +34,19 @@ export const StatCard: React.FC<StatCardProps> = ({
   };
 
   // トレンドの計算
-  const calculateTrend = (): { trend: 'up' | 'down' | 'neutral'; percentage: number } => {
+  const calculateTrend = (): { trend: 'up' | 'down' | 'neutral' | 'warning'; percentage: number } => {
     if (!previousValue || previousValue === 0) {
       return { trend: 'neutral', percentage: 0 };
     }
 
     const percentage = ((value - previousValue) / previousValue) * 100;
     
-    if (percentage > 0) {
+    if (percentage > 5) {
       return { trend: 'up', percentage };
-    } else if (percentage < 0) {
+    } else if (percentage < -5) {
       return { trend: 'down', percentage: Math.abs(percentage) };
+    } else if (percentage !== 0) {
+      return { trend: 'warning', percentage: Math.abs(percentage) };
     }
     
     return { trend: 'neutral', percentage: 0 };
@@ -51,61 +56,53 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   // トレンドアイコンの選択
   const getTrendIcon = () => {
-    const iconClass = "w-4 h-4";
+    const iconClass = "kpi-trend-icon";
     switch (trendInfo.trend) {
       case 'up':
         return <ArrowUpIcon className={iconClass} />;
       case 'down':
         return <ArrowDownIcon className={iconClass} />;
+      case 'warning':
+        return <MinusIcon className={iconClass} />;
       default:
         return <MinusIcon className={iconClass} />;
     }
   };
 
-  // トレンドバッジのスタイル
-  const getTrendBadgeClass = () => {
-    const baseClass = "badge gap-1 ";
-    switch (trendInfo.trend) {
-      case 'up':
-        return baseClass + "badge-success";
-      case 'down':
-        return baseClass + "badge-error";
-      default:
-        return baseClass + "badge-ghost";
-    }
+  // トレンドクラスの取得
+  const getTrendClass = () => {
+    return `kpi-trend kpi-trend--${trendInfo.trend}`;
   };
 
   if (isLoading) {
     return (
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <div className="animate-pulse">
-            <div className="h-4 bg-base-300 rounded w-3/4 mb-3"></div>
-            <div className="h-8 bg-base-300 rounded w-1/2"></div>
-          </div>
-        </div>
+      <div className={`kpi-card kpi-card--loading ${className}`}>
+        <div className="kpi-skeleton kpi-skeleton--title"></div>
+        <div className="kpi-skeleton kpi-skeleton--value"></div>
       </div>
     );
   }
 
   return (
-    <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
-      <div className="card-body">
-        <h3 className="card-title text-sm font-medium text-base-content/70">{title}</h3>
-        <div className="flex items-baseline justify-between">
-          <p className="text-2xl font-bold">{formatValue(value)}</p>
-          {(previousValue !== undefined || trend) && (
-            <div className={getTrendBadgeClass()}>
-              {getTrendIcon()}
-              {previousValue !== undefined && (
-                <span className="font-medium">
-                  {trendInfo.percentage.toFixed(1)}%
-                </span>
-              )}
-            </div>
+    <div className={`kpi-card ${className}`} tabIndex={0} role="region" aria-label={`${title}: ${formatValue(value)}`}>
+      <h3 className="kpi-label">{title}</h3>
+      <div className="kpi-value" aria-label={`現在の値: ${formatValue(value)}`}>
+        {formatValue(value)}
+      </div>
+      {(previousValue !== undefined || trend) && (
+        <div className={getTrendClass()} aria-label={
+          previousValue !== undefined 
+            ? `前期比: ${trendInfo.trend === 'up' ? '増加' : trendInfo.trend === 'down' ? '減少' : '変化'} ${trendInfo.percentage.toFixed(1)}%`
+            : `トレンド: ${trendInfo.trend}`
+        }>
+          {getTrendIcon()}
+          {previousValue !== undefined && (
+            <span className="font-mono">
+              {trendInfo.percentage.toFixed(1)}%
+            </span>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 };
