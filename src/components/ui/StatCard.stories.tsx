@@ -18,7 +18,7 @@ const meta = {
     },
     trend: {
       control: 'radio',
-      options: ['up', 'down', 'neutral']
+      options: ['up', 'down', 'neutral', 'warning']
     }
   },
 } satisfies Meta<typeof StatCard>;
@@ -70,5 +70,24 @@ export const LoadingState: Story = {
     value: 0,
     format: 'currency',
     isLoading: true,
+  },
+};
+
+export const WarningTrend: Story = {
+  args: {
+    title: 'わずかな変動',
+    value: 52000,
+    previousValue: 50000,
+    format: 'currency',
+    trend: 'warning',
+  },
+};
+
+export const LargeNumbers: Story = {
+  args: {
+    title: '月間総売上',
+    value: 15678900,
+    previousValue: 14200000,
+    format: 'currency',
   },
 };
