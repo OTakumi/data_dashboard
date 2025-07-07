@@ -43,8 +43,14 @@ pnpm test
 # 型チェック
 pnpm build
 
-# リント
+# リント（チェックのみ）
 pnpm lint
+
+# リント（自動修正）
+pnpm lint:fix
+
+# フォーマット
+pnpm format
 ```
 
 ## コーディング規約
