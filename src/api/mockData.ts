@@ -1,6 +1,6 @@
 // カフェ用品ECサイトのモックデータ
 
-import type { SalesData, Order, Product, ProductCategory } from '../types/sales';
+import type { SalesData, Order, Product, OrderItem } from '../types/sales';
 
 // 商品マスターデータ（50種類）
 export const products: Product[] = [
