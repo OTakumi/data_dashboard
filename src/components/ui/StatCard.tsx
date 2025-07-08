@@ -1,11 +1,11 @@
-import { useMemo } from "react";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
 import {
-  ArrowUpIcon,
   ArrowDownIcon,
+  ArrowUpIcon,
   MinusIcon,
 } from "@heroicons/react/24/solid";
+import { clsx } from "clsx";
+import { useMemo } from "react";
+import { twMerge } from "tailwind-merge";
 
 const cn = (...inputs: Parameters<typeof clsx>) => {
   return twMerge(clsx(inputs));
@@ -30,7 +30,7 @@ const trendConfig: Record<
 > = {
   up: { Icon: ArrowUpIcon, colorClass: "text-green-500" },
   down: { Icon: ArrowDownIcon, colorClass: "text-red-500" },
-  warning: { Icon: MinusIcon, colorClass: "text-yellow-500" },
+  warning: { Icon: MinusIcon, colorClass: "text-amber-500" },
   neutral: { Icon: MinusIcon, colorClass: "text-gray-500" },
 };
 
@@ -63,11 +63,7 @@ export const StatCard = ({
       options.style = "currency";
       options.currency = "JPY";
     } else if (format === "percentage") {
-      options.style = "percent";
-      options.minimumFractionDigits = 2;
-      options.maximumFractionDigits = 2;
-      // 'percentage'の場合は値を1/100にする
-      return new Intl.NumberFormat("ja-JP", options).format(value / 100);
+      return `${value.toFixed(2)}%`;
     }
     return new Intl.NumberFormat("ja-JP", options).format(value);
   }, [value, format]);
@@ -92,18 +88,6 @@ export const StatCard = ({
 
   const { Icon, colorClass } = trendConfig[trendInfo.trend];
 
-  // スクリーンリーダー用のラベルをメモ化
-  const trendAriaLabel = useMemo(() => {
-    if (previousValue === undefined) return `トレンド: ${trendInfo.trend}`;
-    const change =
-      trendInfo.trend === "up"
-        ? "増加"
-        : trendInfo.trend === "down"
-          ? "減少"
-          : "変化";
-    return `前期比: ${change} ${Math.abs(trendInfo.percentage).toFixed(1)}%`;
-  }, [previousValue, trendInfo]);
-
   if (isLoading) {
     return <StatCardSkeleton className={className} />;
   }
@@ -114,27 +98,24 @@ export const StatCard = ({
         "rounded-lg bg-white p-4 shadow-md dark:bg-gray-800",
         className,
       )}
-      aria-labelledby={`${title}: ${formattedValue}`}
+      aria-label={`${title}: ${formattedValue}`}
     >
       <h3 className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
         {title}
       </h3>
-      <div className="text-3xl font-bold text-gray-900 dark:text-white">
+      <div className="text-3xl font-bold font-mono text-gray-900 dark:text-white">
         {formattedValue}
       </div>
 
       {(previousValue !== undefined || trendProp) && (
-        <section
-          className={cn("mt-2 flex items-center text-sm", colorClass)}
-          aria-labelledby={trendAriaLabel}
-        >
+        <div className={cn("mt-2 flex items-center text-sm", colorClass)}>
           <Icon className="mr-1 h-4 w-4" />
           {previousValue !== undefined && (
             <span className="font-mono font-semibold">
               {Math.abs(trendInfo.percentage).toFixed(1)}%
             </span>
           )}
-        </section>
+        </div>
       )}
     </section>
   );
