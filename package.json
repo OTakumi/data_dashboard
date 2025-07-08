@@ -16,9 +16,11 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@tanstack/react-query": "^5.81.5",
+    "clsx": "^2.1.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "recharts": "^3.0.2",
+    "tailwind-merge": "^3.3.1",
     "zustand": "^5.0.6"
   },
   "devDependencies": {

@@ -1,108 +1,141 @@
-import React from 'react';
-import { ArrowUpIcon, ArrowDownIcon, MinusIcon } from '@heroicons/react/24/solid';
-import './StatCard.css';
+import { useMemo } from "react";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import {
+  ArrowUpIcon,
+  ArrowDownIcon,
+  MinusIcon,
+} from "@heroicons/react/24/solid";
 
-interface StatCardProps {
+const cn = (...inputs: Parameters<typeof clsx>) => {
+  return twMerge(clsx(inputs));
+};
+
+type Trend = "up" | "down" | "neutral" | "warning";
+
+type StatCardProps = {
   title: string;
   value: number;
   previousValue?: number;
-  format?: 'currency' | 'number' | 'percentage';
-  trend?: 'up' | 'down' | 'neutral' | 'warning';
+  format?: "currency" | "number" | "percentage";
+  trend?: Trend;
   isLoading?: boolean;
   className?: string;
-}
+};
 
-export const StatCard: React.FC<StatCardProps> = ({
+// トレンドとアイコン、色のマッピング
+const trendConfig: Record<
+  Trend,
+  { Icon: React.ElementType; colorClass: string }
+> = {
+  up: { Icon: ArrowUpIcon, colorClass: "text-green-500" },
+  down: { Icon: ArrowDownIcon, colorClass: "text-red-500" },
+  warning: { Icon: MinusIcon, colorClass: "text-yellow-500" },
+  neutral: { Icon: MinusIcon, colorClass: "text-gray-500" },
+};
+
+// ローディングスケルトンコンポーネント
+const StatCardSkeleton = ({ className }: { className?: string }) => (
+  <div
+    className={cn(
+      "animate-pulse rounded-lg bg-white p-4 shadow-md dark:bg-gray-800",
+      className,
+    )}
+  >
+    <div className="mb-2 h-4 w-2/3 rounded bg-gray-200 dark:bg-gray-700"></div>
+    <div className="h-8 w-1/2 rounded bg-gray-200 dark:bg-gray-700"></div>
+  </div>
+);
+
+export const StatCard = ({
   title,
   value,
   previousValue,
-  format = 'number',
-  trend,
+  format = "number",
+  trend: trendProp,
   isLoading = false,
-  className = '',
-}) => {
-  // 値のフォーマット
-  const formatValue = (val: number): string => {
-    switch (format) {
-      case 'currency':
-        return `¥${val.toLocaleString('ja-JP')}`;
-      case 'percentage':
-        return `${val.toFixed(2)}%`;
-      default:
-        return val.toLocaleString('ja-JP');
+  className = "",
+}: StatCardProps) => {
+  // 値のフォーマットロジックをメモ化
+  const formattedValue = useMemo(() => {
+    const options: Intl.NumberFormatOptions = {};
+    if (format === "currency") {
+      options.style = "currency";
+      options.currency = "JPY";
+    } else if (format === "percentage") {
+      options.style = "percent";
+      options.minimumFractionDigits = 2;
+      options.maximumFractionDigits = 2;
+      // 'percentage'の場合は値を1/100にする
+      return new Intl.NumberFormat("ja-JP", options).format(value / 100);
     }
-  };
+    return new Intl.NumberFormat("ja-JP", options).format(value);
+  }, [value, format]);
 
   // トレンドの計算
-  const calculateTrend = (): { trend: 'up' | 'down' | 'neutral' | 'warning'; percentage: number } => {
-    if (!previousValue || previousValue === 0) {
-      return { trend: 'neutral', percentage: 0 };
+  const trendInfo = useMemo(() => {
+    if (previousValue === undefined) {
+      return { trend: trendProp || "neutral", percentage: 0 };
+    }
+    if (previousValue === 0) {
+      return { trend: "neutral" as Trend, percentage: 0 };
     }
 
     const percentage = ((value - previousValue) / previousValue) * 100;
-    
-    if (percentage > 5) {
-      return { trend: 'up', percentage };
-    } else if (percentage < -5) {
-      return { trend: 'down', percentage: Math.abs(percentage) };
-    } else if (percentage !== 0) {
-      return { trend: 'warning', percentage: Math.abs(percentage) };
-    }
-    
-    return { trend: 'neutral', percentage: 0 };
-  };
+    let calculatedTrend: Trend = "neutral";
+    if (percentage > 5) calculatedTrend = "up";
+    else if (percentage < -5) calculatedTrend = "down";
+    else if (percentage !== 0) calculatedTrend = "warning";
 
-  const trendInfo = previousValue !== undefined ? calculateTrend() : { trend: trend || 'neutral', percentage: 0 };
+    return { trend: calculatedTrend, percentage };
+  }, [value, previousValue, trendProp]);
 
-  // トレンドアイコンの選択
-  const getTrendIcon = () => {
-    const iconClass = "kpi-trend-icon";
-    switch (trendInfo.trend) {
-      case 'up':
-        return <ArrowUpIcon className={iconClass} />;
-      case 'down':
-        return <ArrowDownIcon className={iconClass} />;
-      case 'warning':
-        return <MinusIcon className={iconClass} />;
-      default:
-        return <MinusIcon className={iconClass} />;
-    }
-  };
+  const { Icon, colorClass } = trendConfig[trendInfo.trend];
 
-  // トレンドクラスの取得
-  const getTrendClass = () => {
-    return `kpi-trend kpi-trend--${trendInfo.trend}`;
-  };
+  // スクリーンリーダー用のラベルをメモ化
+  const trendAriaLabel = useMemo(() => {
+    if (previousValue === undefined) return `トレンド: ${trendInfo.trend}`;
+    const change =
+      trendInfo.trend === "up"
+        ? "増加"
+        : trendInfo.trend === "down"
+          ? "減少"
+          : "変化";
+    return `前期比: ${change} ${Math.abs(trendInfo.percentage).toFixed(1)}%`;
+  }, [previousValue, trendInfo]);
 
   if (isLoading) {
-    return (
-      <div className={`kpi-card kpi-card--loading ${className}`}>
-        <div className="kpi-skeleton kpi-skeleton--title"></div>
-        <div className="kpi-skeleton kpi-skeleton--value"></div>
-      </div>
-    );
+    return <StatCardSkeleton className={className} />;
   }
 
   return (
-    <div className={`kpi-card ${className}`} tabIndex={0} role="region" aria-label={`${title}: ${formatValue(value)}`}>
-      <h3 className="kpi-label">{title}</h3>
-      <div className="kpi-value" aria-label={`現在の値: ${formatValue(value)}`}>
-        {formatValue(value)}
+    <section
+      className={cn(
+        "rounded-lg bg-white p-4 shadow-md dark:bg-gray-800",
+        className,
+      )}
+      aria-labelledby={`${title}: ${formattedValue}`}
+    >
+      <h3 className="mb-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+        {title}
+      </h3>
+      <div className="text-3xl font-bold text-gray-900 dark:text-white">
+        {formattedValue}
       </div>
-      {(previousValue !== undefined || trend) && (
-        <div className={getTrendClass()} aria-label={
-          previousValue !== undefined 
-            ? `前期比: ${trendInfo.trend === 'up' ? '増加' : trendInfo.trend === 'down' ? '減少' : '変化'} ${trendInfo.percentage.toFixed(1)}%`
-            : `トレンド: ${trendInfo.trend}`
-        }>
-          {getTrendIcon()}
+
+      {(previousValue !== undefined || trendProp) && (
+        <section
+          className={cn("mt-2 flex items-center text-sm", colorClass)}
+          aria-labelledby={trendAriaLabel}
+        >
+          <Icon className="mr-1 h-4 w-4" />
           {previousValue !== undefined && (
-            <span className="font-mono">
-              {trendInfo.percentage.toFixed(1)}%
+            <span className="font-mono font-semibold">
+              {Math.abs(trendInfo.percentage).toFixed(1)}%
             </span>
           )}
-        </div>
+        </section>
       )}
-    </div>
+    </section>
   );
 };
