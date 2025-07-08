@@ -9,17 +9,17 @@ export interface SalesData {
   productName: string;
   quantity: number;
   customerId: string;
-  customerType: 'new' | 'returning';
+  customerType: "new" | "returning";
 }
 
-export type ProductCategory = 
-  | 'コーヒー豆'
-  | 'コーヒー器具'
-  | 'エスプレッソマシン'
-  | 'グラインダー'
-  | 'ドリッパー・フィルター'
-  | 'カップ・グラス'
-  | 'その他アクセサリー';
+export type ProductCategory =
+  | "コーヒー豆"
+  | "コーヒー器具"
+  | "エスプレッソマシン"
+  | "グラインダー"
+  | "ドリッパー・フィルター"
+  | "カップ・グラス"
+  | "その他アクセサリー";
 
 export interface DailySales {
   date: string;
@@ -49,8 +49,8 @@ export interface Order {
   customerName: string;
   items: OrderItem[];
   totalAmount: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  paymentMethod: 'credit_card' | 'bank_transfer' | 'convenience_store';
+  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  paymentMethod: "credit_card" | "bank_transfer" | "convenience_store";
 }
 
 export interface OrderItem {
@@ -83,7 +83,14 @@ export interface DashboardMetrics {
 }
 
 // 期間フィルター用の型
-export type DateRange = 'today' | 'yesterday' | 'last7days' | 'last30days' | 'thisMonth' | 'lastMonth' | 'custom';
+export type DateRange =
+  | "today"
+  | "yesterday"
+  | "last7days"
+  | "last30days"
+  | "thisMonth"
+  | "lastMonth"
+  | "custom";
 
 export interface DateRangeFilter {
   type: DateRange;
